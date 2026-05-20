@@ -122,7 +122,7 @@ const DEFAULT_FIELDS = {
   pages: '1',
   order: '1',
   watermark: 'Confidential',
-  password: 'HuffZip-1234',
+  password: 'ILoveMyPDF-1234',
   jobDescription: 'React Node.js MongoDB C++ data structures algorithms PDF security',
   outputName: '',
 };
@@ -307,7 +307,7 @@ function App() {
       <header className="relative z-10 border-b border-white/10 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div>
-            <div className="text-xs uppercase tracking-[0.5em] text-cyan-300">HuffZip AI</div>
+            <div className="text-xs uppercase tracking-[0.5em] text-cyan-300">I Love My PDF</div>
             <h1 className="mt-1 text-2xl font-black text-white sm:text-3xl">Smart PDF & Document Toolkit</h1>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -333,7 +333,7 @@ function App() {
               Manage documents with a single intelligent workspace.
             </h2>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
-              HuffZip AI brings together document compression, PDF utilities, secure file handling, and lightweight automation in one polished product experience.
+              I Love My PDF brings together document compression, PDF utilities, secure file handling, and lightweight automation in one polished product experience.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <a href="#workspace" className="rounded-full bg-cyan-400 px-6 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300">
