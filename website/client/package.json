@@ -1,5 +1,5 @@
 {
-  "name": "i-love-my-pdf-client",
+  "name": "pdfforge-client",
   "private": true,
   "scripts": {
     "dev": "vite",
