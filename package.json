@@ -1,0 +1,23 @@
+{
+  "name": "huffzip-ai",
+  "private": true,
+  "workspaces": [
+    "website/client",
+    "website/server"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client \"npm --workspace website/server run dev\" \"npm --workspace website/client run dev\"",
+    "dev:web": "concurrently -n server,client \"npm --workspace website/server run dev\" \"npm --workspace website/client run dev\"",
+    "dev:engine": "npm run build:cpp",
+    "dev:server": "npm --workspace website/server run dev",
+    "dev:client": "npm --workspace website/client run dev",
+    "build": "npm --workspace website/client run build && npm run build:cpp",
+    "build:web": "npm --workspace website/client run build",
+    "build:engine": "cmake -S engine -B engine/build && cmake --build engine/build --config Release",
+    "build:cpp": "cmake -S engine -B engine/build && cmake --build engine/build --config Release",
+    "start": "npm --workspace website/server run start"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}

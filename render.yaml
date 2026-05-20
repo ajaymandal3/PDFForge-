@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: huffzip-ai-api
+    env: node
+    plan: free
+    rootDir: website/server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CLIENT_ORIGIN
+        value: https://huffzip-ai.vercel.app
+      - key: PORT
+        value: 10000

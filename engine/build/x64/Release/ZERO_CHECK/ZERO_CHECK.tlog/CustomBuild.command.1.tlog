@@ -1,0 +1,10 @@
+^C:\USERS\AJAY\DESKTOP\PROJECT\ENGINE\BUILD\CMAKEFILES\4C2AC1216CC264F417CF14A7318B0B1E\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/AJAY/Desktop/Project/engine -BC:/Users/AJAY/Desktop/Project/engine/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/AJAY/Desktop/Project/engine/build/huffzip_ai.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
