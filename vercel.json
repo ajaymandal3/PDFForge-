@@ -2,5 +2,13 @@
   "framework": "vite",
   "installCommand": "npm install",
   "buildCommand": "npm run build:web",
-  "outputDirectory": "website/client/dist"
+  "outputDirectory": "website/client/dist",
+  "experimentalServices": {
+    "huffzip-ai-api": {
+      "type": "web",
+      "entrypoint": "website/server",
+      "routePrefix": "/api",
+      "buildCommand": "npm install"
+    }
+  }
 }
