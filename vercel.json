@@ -1,6 +1,6 @@
 {
   "framework": "vite",
-  "installCommand": "npm install --workspace website/client",
+  "installCommand": "npm install",
   "buildCommand": "npm --workspace website/client run build",
   "outputDirectory": "website/client/dist"
 }

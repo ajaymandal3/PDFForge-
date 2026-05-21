@@ -1,0 +1,2 @@
+HuffZip AI offline validation sample.
+This file repeats repeats repeats words to make compression meaningful.

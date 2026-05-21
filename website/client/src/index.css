@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,6 +6,8 @@
 
 :root {
   color-scheme: dark;
+  --accent: 34 211 238;
+  --accent-secondary: 167 139 250;
 }
 
 html {
@@ -13,11 +15,31 @@ html {
 }
 
 body {
-  @apply bg-slate-950 text-slate-100 antialiased font-display;
+  @apply bg-[#060b14] font-display text-slate-100 antialiased;
   background-image:
-    radial-gradient(circle at top left, rgba(34, 211, 238, 0.16), transparent 32%),
-    radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), transparent 28%),
-    linear-gradient(180deg, #07111f 0%, #0a1729 100%);
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(34, 211, 238, 0.12), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(167, 139, 250, 0.08), transparent),
+    radial-gradient(ellipse 50% 30% at 0% 50%, rgba(16, 185, 129, 0.06), transparent);
+  min-height: 100vh;
+}
+
+html.light body {
+  @apply bg-slate-50 text-slate-900;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(34, 211, 238, 0.08), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(167, 139, 250, 0.05), transparent);
+}
+
+html.light .glass-panel {
+  @apply border-slate-200/80 bg-white/80 text-slate-900 shadow-lg;
+}
+
+html.light .text-on-surface {
+  @apply text-slate-900;
+}
+
+html.light .text-muted {
+  @apply text-slate-600;
 }
 
 * {
@@ -25,5 +47,83 @@ body {
 }
 
 ::selection {
-  background: rgba(34, 211, 238, 0.28);
+  background: rgba(34, 211, 238, 0.35);
+  color: #fff;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
+}
+
+@layer components {
+  .glass-panel {
+    @apply rounded-2xl border border-white/[0.08] bg-slate-900/50 shadow-glow backdrop-blur-2xl;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 20px 50px rgba(0, 0, 0, 0.35);
+  }
+
+  .glass-panel-lg {
+    @apply glass-panel rounded-3xl;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-cyan-400 via-cyan-300 to-emerald-400 px-6 py-3 font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition duration-200 hover:scale-[1.02] hover:shadow-cyan-500/30 active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-6 py-3 font-semibold text-white backdrop-blur-sm transition duration-200 hover:border-white/20 hover:bg-white/10;
+  }
+
+  .nav-link {
+    @apply relative rounded-full px-4 py-2 text-sm font-medium text-slate-300 transition duration-200 hover:text-white;
+  }
+
+  .nav-link-active {
+    @apply bg-white/10 text-white shadow-inner;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-cyan-200 via-white to-violet-200 bg-clip-text text-transparent;
+  }
+
+  .section-label {
+    @apply text-[0.65rem] font-bold uppercase tracking-[0.45em] text-cyan-400/90;
+  }
+
+  .input-field {
+    @apply w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-slate-100 placeholder:text-slate-500 transition focus:border-cyan-400/60 focus:ring-2 focus:ring-cyan-400/15;
+  }
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(34, 211, 238, 0.5);
+  outline-offset: 2px;
+}
+
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+
+.animate-fade-up {
+  opacity: 0;
+  animation: fadeUp 0.6s ease-out forwards;
 }

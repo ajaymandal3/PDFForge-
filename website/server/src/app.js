@@ -16,7 +16,8 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'huffzip-ai-api', time: new Date().toISOString() });
 });
 
-app.use('/api', routes);
+// Mount routes at root for serverless compatibility (Vercel functions expose paths under `/api/*`)
+app.use(routes);
 app.use(errorHandler);
 
 module.exports = app;

@@ -4,11 +4,13 @@ const fs = require('fs/promises');
 const path = require('path');
 const { uploadsDir, compressedDir, cleanupTempArtifacts, createDownloadToken, consumeDownloadToken, removeDownloadToken, sanitizeName, uniqueName } = require('./services/storage');
 const { compressFile, decompressFile, analyzeCompression } = require('./services/compressionBridge');
-const { mergePdfs, splitPdf, rearrangePdf, watermarkPdf, extractPdfText, protectPdf } = require('./services/pdfToolkit');
+const { mergePdfs, splitPdf, rearrangePdf, watermarkPdf, extractPdfText, protectPdf, compressPdf } = require('./services/pdfToolkit');
+const { summarizePdf } = require('./services/geminiSummarizer');
 const { analyzeResume, recommendCompression } = require('./services/analysis');
 const { encryptFile, decryptFile } = require('./services/encryption');
 const { recordOperation, listOperations, getDashboardStats } = require('./services/history');
 
+const fsStream = require('fs');
 const router = express.Router();
 
 const storage = multer.diskStorage({
@@ -22,14 +24,23 @@ function getTtlMs() {
   return Number(process.env.FILE_TTL_MINUTES || 10) * 60 * 1000;
 }
 
-function sendDownload(res, filePath, downloadName, tokenLabel = 'download') {
+async function sendDownload(res, filePath, downloadName, tokenLabel = 'download') {
   const token = createDownloadToken(filePath, downloadName, getTtlMs());
+  let size = 0;
+  try {
+    const stats = await fs.stat(filePath);
+    size = stats.size;
+  } catch (err) {
+    // ignore, size stays 0
+  }
+
   res.json({
     ok: true,
     token,
     downloadUrl: `/api/download/${token}`,
     downloadName,
     tokenLabel,
+    outputSize: size,
   });
 }
 
@@ -64,12 +75,22 @@ router.get('/download/:token', async (req, res, next) => {
     }
 
     const { filePath, fileName } = entry;
-    return res.download(filePath, fileName, async (error) => {
+
+    // Stream file with explicit headers to ensure correct MIME and disposition
+    const ext = path.extname(fileName || '').toLowerCase();
+    const mimeType = ext === '.pdf' ? 'application/pdf' : ext === '.txt' ? 'text/plain' : 'application/octet-stream';
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+
+    const stream = fsStream.createReadStream(filePath);
+    stream.on('error', (err) => {
       removeDownloadToken(req.params.token);
-      if (error) {
-        next(error);
-      }
+      next(err);
     });
+    stream.on('end', () => {
+      removeDownloadToken(req.params.token);
+    });
+    stream.pipe(res);
   } catch (error) {
     next(error);
   }
@@ -202,6 +223,41 @@ router.post('/security/decrypt', upload.single('file'), async (req, res, next) =
   }
 });
 
+router.post('/pdf/compress', upload.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ ok: false, message: 'PDF file is required' });
+    }
+
+    if (!/\.pdf$/i.test(req.file.originalname)) {
+      return res.status(400).json({ ok: false, message: 'Only PDF files are supported.' });
+    }
+
+    const quality = String(req.body.quality || 'ebook').toLowerCase();
+    const result = await compressPdf(req.file.path, req.file.originalname, quality);
+    const originalSize = req.file.size;
+    const outputSize = result.outputSize;
+    const savedBytes = Math.max(0, originalSize - outputSize);
+    const ratio = originalSize === 0 ? 0 : Number((outputSize / originalSize).toFixed(4));
+
+    await recordOperation({
+      type: 'pdf-compress',
+      inputName: req.file.originalname,
+      outputName: path.basename(result.outputPath),
+      originalSize,
+      outputSize,
+      savedBytes,
+      ratio,
+      metadata: result,
+    });
+
+    cleanupTempArtifacts(req.file.path, result.outputPath);
+    sendDownload(res, result.outputPath, path.basename(result.outputPath), 'compressed pdf');
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post('/pdf/merge', upload.array('files', 12), async (req, res, next) => {
   try {
     if (!req.files || req.files.length < 2) {
@@ -311,6 +367,39 @@ router.post('/pdf/extract-text', upload.single('file'), async (req, res, next) =
     const text = await extractPdfText(req.file.path);
     cleanupTempArtifacts(req.file.path);
     res.json({ ok: true, text, characterCount: text.length });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/pdf/summarize', upload.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ ok: false, message: 'PDF file is required' });
+    }
+
+    if (!/\.pdf$/i.test(req.file.originalname)) {
+      return res.status(400).json({ ok: false, message: 'Only PDF files are supported.' });
+    }
+
+    const result = await summarizePdf(req.file.path, {
+      style: req.body.style || 'brief',
+      focus: req.body.focus || '',
+    });
+
+    await recordOperation({
+      type: 'pdf-summarize',
+      inputName: req.file.originalname,
+      outputName: 'summary.txt',
+      originalSize: req.file.size,
+      outputSize: result.summary.length,
+      savedBytes: 0,
+      ratio: 1,
+      metadata: { model: result.model, truncated: result.truncated },
+    });
+
+    cleanupTempArtifacts(req.file.path);
+    res.json({ ok: true, ...result });
   } catch (error) {
     next(error);
   }

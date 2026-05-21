@@ -2,9 +2,26 @@ const { execFile } = require('child_process');
 const { promisify } = require('util');
 const fs = require('fs/promises');
 const path = require('path');
-const { compressedDir, uniqueName } = require('./storage');
+const zlib = require('zlib');
+const { compressedDir, tempDir, uniqueName } = require('./storage');
 
 const execFileAsync = promisify(execFile);
+const ARCHIVE_MAGIC = Buffer.from('HZDF');
+
+async function ensureOutputDirs() {
+  await Promise.all([
+    fs.mkdir(compressedDir, { recursive: true }),
+    fs.mkdir(tempDir, { recursive: true }),
+  ]);
+}
+
+async function safeUnlink(filePath) {
+  try {
+    await fs.unlink(filePath);
+  } catch (error) {
+    // ignore cleanup failures
+  }
+}
 
 async function resolveExistingPath(candidates) {
   for (const candidate of candidates) {
@@ -44,22 +61,59 @@ async function runEngine(command, inputPath, outputPath) {
 }
 
 async function compressFile(inputPath, originalName) {
+  await ensureOutputDirs();
+
+  const rawArchivePath = path.join(tempDir, uniqueName(`${path.parse(originalName).name}-raw`, '.huff'));
   const outputPath = path.join(compressedDir, uniqueName(`${path.parse(originalName).name}-compressed`, '.huff'));
-  const result = await runEngine('compress', inputPath, outputPath);
-  const stats = await fs.stat(outputPath);
-  return {
-    ...result,
-    outputPath,
-    outputSize: stats.size,
-  };
+
+  try {
+    const result = await runEngine('compress', inputPath, rawArchivePath);
+    const rawArchive = await fs.readFile(rawArchivePath);
+    const deflatedArchive = zlib.deflateSync(rawArchive, { level: 9 });
+    await fs.writeFile(outputPath, Buffer.concat([ARCHIVE_MAGIC, deflatedArchive]));
+    const stats = await fs.stat(outputPath);
+
+    return {
+      ...result,
+      compressionStages: ['huffman', 'deflate'],
+      outputPath,
+      outputSize: stats.size,
+    };
+  } finally {
+    await safeUnlink(rawArchivePath);
+  }
 }
 
 async function decompressFile(inputPath, fallbackName) {
+  await ensureOutputDirs();
+
   const outputPath = path.join(compressedDir, uniqueName(`${path.parse(fallbackName).name}-restored`, '.bin'));
+  const inputBytes = await fs.readFile(inputPath);
+
+  if (inputBytes.length > ARCHIVE_MAGIC.length && inputBytes.subarray(0, ARCHIVE_MAGIC.length).equals(ARCHIVE_MAGIC)) {
+    const rawArchivePath = path.join(tempDir, uniqueName(`${path.parse(fallbackName).name}-raw`, '.huff'));
+
+    try {
+      const rawArchive = zlib.inflateSync(inputBytes.subarray(ARCHIVE_MAGIC.length));
+      await fs.writeFile(rawArchivePath, rawArchive);
+      const result = await runEngine('decompress', rawArchivePath, outputPath);
+      const stats = await fs.stat(outputPath);
+      return {
+        ...result,
+        wrapped: true,
+        outputPath,
+        outputSize: stats.size,
+      };
+    } finally {
+      await safeUnlink(rawArchivePath);
+    }
+  }
+
   const result = await runEngine('decompress', inputPath, outputPath);
   const stats = await fs.stat(outputPath);
   return {
     ...result,
+    wrapped: false,
     outputPath,
     outputSize: stats.size,
   };
