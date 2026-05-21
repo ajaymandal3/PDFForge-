@@ -1,7 +1,10 @@
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '..', '..', '..', '.env') });
+require('dotenv').config();
+
 const app = require('./app');
 const { connectDatabase } = require('./config/db');
 const { ensureDirectories } = require('./services/storage');
-require('dotenv').config();
 
 const port = process.env.PORT || 5000;
 
